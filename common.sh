@@ -43,7 +43,14 @@ nodejs_setup(){
     VALIDATE $? "npm dependencies installation"
 }
 app_setup(){
-
+    id roboshop &>>$LOG_FILE
+    if [ $? -ne 0 ]; then
+        useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
+        echo "Adding roboshop user"
+        VALIDATE $? "Adding roboshop user"
+    else
+        echo -e "roboshop user already exists. $Y..Skipping user creation..$N"
+    fi
     mkdir /app 
     curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/$app_name-v3.zip 
     cd /app 
