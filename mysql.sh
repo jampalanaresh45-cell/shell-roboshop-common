@@ -3,7 +3,7 @@ source ./common.sh
 check_root
 app_name="mysql"
 
-dnf install mysql -y &>>$LOG_FILE
+dnf install $app_name -y &>>$LOG_FILE
 VALIDATE $? "MySQL installation"
 
 systemctl enable mysqld &>>$LOG_FILE
