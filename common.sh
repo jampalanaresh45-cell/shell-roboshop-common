@@ -10,6 +10,8 @@ LOG_FOLDER="/var/log/shellroboshop"
 SCRIPT_NAME=$( echo $0 | cut -d "." -f1 )
 LOG_FILE="$LOG_FOLDER/$SCRIPT_NAME.log"
 START_TIME=$(date +%s)
+SCRIPT_DIR=$pwd
+MONGODB_HOST=mongo.daws86s.store
 
 mkdir -p $LOG_FOLDER
 echo "script started at $(date)" | tee -a $LOG_FILE
@@ -29,7 +31,45 @@ VALIDATE(){
         echo -e "$2 succeeded $N" | tee -a $LOG_FILE
     fi
 }
+nodejs_setup(){
+    dnf module disable nodejs -y &>>$LOG_FILE
+    VALIDATE $? "Nodejs module disable"
+    dnf module enable nodejs:20 -y &>>$LOG_FILE
+    VALIDATE $? "Nodejs20 module enabled"
+    dnf install nodejs -y &>>$LOG_FILE
+    VALIDATE $? "Nodejs install"
+    
+    npm install &>>$LOG_FILE
+    VALIDATE $? "npm dependencies installation"
+}
+app_setup(){
 
+    mkdir /app 
+    curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/$app_name-v3.zip 
+    cd /app 
+    VALIDATE $? "Changing to app directory"
+    rm -rf /app/* &>>$LOG_FILE
+    VALIDATE $? "Cleaning up existing code"
+
+    unzip /tmp/$app_name.zip &>>$LOG_FILE
+    VALIDATE $? "Catalogue unzip $app_name"
+    
+}
+systemd_setup(){
+    cp $SCRIPT_DIR/$app_name.service /etc/systemd/system/$app_name.service
+    VALIDATE $? "Copying $app_name systemd file"
+
+    systemctl daemon-reload &>>$LOG_FILE
+    VALIDATE $? "Reloading systemd"
+
+    systemctl enable $app_name &>>$LOG_FILE
+    VALIDATE $? "Enabling $app_name"
+
+}
+app_restart(){
+    systemctl restart $app_name &>>$LOG_FILE
+    VALIDATE $? "Restarting $app_name"
+}
 print_total_time(){
     END_TIME=$(date +%s)
     ELAPSED_TIME=$(($END_TIME - $START_TIME))
